@@ -8,5 +8,7 @@ sqlite3 database/trades_db.db < sql_scripts/trades.sql
 
 sudo apt install graphviz libgraphviz-dev
 
+uv sync
+
 
 
