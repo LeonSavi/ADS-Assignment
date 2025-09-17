@@ -10,5 +10,5 @@ wheels/
 
 # Virtual environments
 .venv
-.python_version
+.python-version
 uv.lock
