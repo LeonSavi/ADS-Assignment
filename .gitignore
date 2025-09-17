@@ -6,8 +6,9 @@ dist/
 wheels/
 *.egg-info
 .ipynb_checkpoints/
+#*.db
 
 # Virtual environments
 .venv
-.python_version
-#*.db
+.python-version
+uv.lock
