@@ -1,4 +1,5 @@
 from eralchemy2 import render_er
+# alternative script to create the ER diagram
 
 def main():
     db_path = "database/trades_db.db"

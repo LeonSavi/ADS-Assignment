@@ -20,8 +20,8 @@ DROP TABLE IF EXISTS bill_item;
 
 -- country ID
 CREATE TABLE country_tbl (
-    country_code CHAR(2) PRIMARY KEY, -- NL
-    country VARCHAR UNIQUE NOT NULL, -- netherlands
+    country CHAR(2) PRIMARY KEY, -- NL
+    country_name VARCHAR UNIQUE NOT NULL, -- netherlands
     country_phone_code INTEGER UNIQUE NOT NULL-- 0031/+31
 );
 -- SECTOR
@@ -55,6 +55,8 @@ CREATE TABLE customer (
 CREATE TABLE ref_customers (
     reference_id INTEGER PRIMARY KEY,
     customer_id INTEGER,
+    name VARCHAR NOT NULL,
+    surname VARCHAR NOT NULL,
     role VARCHAR NOT NULL, -- sales
     email VARCHAR UNIQUE NOT NULL,
     country VARCHAR NOT NULL,
@@ -67,6 +69,8 @@ CREATE TABLE ref_customers (
 CREATE TABLE employees (
     employee_id INTEGER PRIMARY KEY,
     branch_id INTEGER,
+    name VARCHAR NOT NULL,
+    surname VARCHAR NOT NULL,
     role VARCHAR NOT NULL CHECK(role IN ('External', 'Manager', 'Salesman', 'HR')),
     department VARCHAR NOT NULL CHECK(department IN ('Sales', 'HR', 'R&D', 'Management')),
     email VARCHAR NOT NULL,
@@ -80,9 +84,11 @@ CREATE TABLE partner (
     company_name VARCHAR NOT NULL,
     country VARCHAR NOT NULL,
     products_and_services VARCHAR NOT NULL,
+    sector VARCHAR NOT NULL,
     contact_person VARCHAR NOT NULL,
     contact_email VARCHAR NOT NULL,
     FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE
+    FOREIGN KEY(sector) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE
 );
 -- items we sell
 CREATE TABLE items (
@@ -110,10 +116,10 @@ CREATE TABLE bill (
 -- Status of our invoices
 CREATE TABLE status (
     bill_id INTEGER,
-    update_date DATE DEFAULT CURRENT_TIMESTAMP,
-    status_items VARCHAR NOT NULL,
-    status_payment VARCHAR NOT NULL,
-    refund_request INTEGER DEFAULT 0,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status_items VARCHAR(20) NOT NULL CHECK(status_items IN ('Preparing', 'Shipping', 'Delivered', 'Returned')),
+    status_payment VARCHAR(20) NOT NULL CHECK(status_payment IN ('Pending', 'Paid', 'Failed', 'Refunded')),
+    refund_request INTEGER DEFAULT 0 CHECK(refund_request IN (0,1)),
     PRIMARY KEY (bill_id, update_date),
     FOREIGN KEY (bill_id) REFERENCES bill(bill_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -130,7 +136,7 @@ CREATE TABLE bill_item (
 
 
 -- Insert countries
-INSERT INTO country_tbl (country_code, country, country_phone_code) VALUES
+INSERT INTO country_tbl (country, country_name, country_phone_code) VALUES
 ('NL', 'Netherlands', 0031),
 ('DE', 'Germany', 0049),
 ('FR', 'France', 0033),
@@ -156,68 +162,76 @@ INSERT INTO sector_tbl (sector_code, sector, sector_desc) VALUES
 ('S10', 'Telecom', 'Telecommunications companies');
 -- Insert branches
 INSERT INTO branch (branch_id, name, city, country) VALUES
-(1, 'HQ Amsterdam', 'Amsterdam', 'Netherlands'),
-(2, 'Berlin Office', 'Berlin', 'Germany'),
-(3, 'France Office', 'Paris', 'France'),
-(4, 'Rome Office', 'Rome', 'Italy'),
-(5, 'Madrid Hub', 'Madrid', 'Spain'),
-(6, 'Lisbon Office', 'Lisbon', 'Portugal'),
-(7, 'Brussels Office', 'Brussels', 'Belgium'),
-(8, 'New York Office', 'New York', 'United States'),
-(9, 'Shanghai Hub', 'Shanghai', 'China'),
-(10, 'Athens Office', 'Athens', 'Greece');
+(1, 'HQ Amsterdam', 'Amsterdam', 'NL'),
+(2, 'Berlin Office', 'Berlin', 'DE'),
+(3, 'France Office', 'Paris', 'FR'),
+(4, 'Rome Office', 'Rome', 'IT'),
+(5, 'Madrid Hub', 'Madrid', 'ES'),
+(6, 'Lisbon Office', 'Lisbon', 'PT'),
+(7, 'Brussels Office', 'Brussels', 'BE'),
+(8, 'New York Office', 'New York', 'US'),
+(9, 'Shanghai Hub', 'Shanghai', 'CH'),
+(10, 'Athens Office', 'Athens', 'GR');
 
 -- Insert customers
 INSERT INTO customer (customer_id, company_name, sector_code, country, street, house_number, zip_code, city) VALUES
-(1, 'TechRetail BV', 'S03', 'Netherlands', 'Keizersgracht', '221', '1016', 'Amsterdam'),
-(2, 'FinBank AG', 'S01', 'Germany', 'Unter den Linden', '45', '10117', 'Berlin'),
-(3, 'MedTech SA', 'S06', 'France', 'Rue Lafayette', '12', '75009', 'Paris'),
-(4, 'EduGlobal BV', 'S07', 'Netherlands', 'Damrak', '50', '1012', 'Amsterdam'),
-(5, 'LogiTrans GmbH', 'S05', 'Germany', 'Friedrichstrasse', '60', '10117', 'Berlin'),
-(6, 'EnergyCorp', 'S08', 'Italy', 'Via Roma', '33', '00184', 'Rome'),
-(7, 'ConsultPlus', 'S09', 'Spain', 'Gran Via', '101', '28013', 'Madrid'),
-(8, 'TeleCom NL', 'S10', 'Netherlands', 'Leidsestraat', '200', '1017', 'Amsterdam'),
-(9, 'RetailMax', 'S03', 'Portugal', 'Rua Augusta', '150', '1100', 'Lisbon'),
-(10, 'BankSecure', 'S01', 'Belgium', 'Rue Royale', '75', '1000', 'Brussels');
+(1, 'TechRetail BV', 'S03', 'NL', 'Keizersgracht', '221', '1016AP', 'Amsterdam'),
+(2, 'FinBank AG', 'S01', 'DE', 'Unter den Linden', '45', '10117', 'Berlin'),
+(3, 'MedTech SA', 'S06', 'FR', 'Rue Lafayette', '12', '75009', 'Paris'),
+(4, 'EduGlobal BV', 'S07', 'NL', 'Damrak', '50', '1012AP', 'Amsterdam'),
+(5, 'LogiTrans GmbH', 'S05', 'DE', 'Friedrichstrasse', '60', '10117', 'Berlin'),
+(6, 'EnergyCorp', 'S08', 'IT', 'Via Roma', '33', '00184', 'Rome'),
+(7, 'ConsultPlus', 'S09', 'ES', 'Gran Via', '101', '28013', 'Madrid'),
+(8, 'TeleCom NL', 'S10', 'NL', 'Leidsestraat', '200', '1017AP', 'Amsterdam'),
+(9, 'RetailMax', 'S03', 'PT', 'Rua Augusta', '150', '1100', 'Lisbon'),
+(10, 'BankSecure', 'S01', 'BE', 'Rue Royale', '75', '1000', 'Brussels'),
+(11, 'Intesa SPA', 'S01', 'IT', 'Via Roma', '10A','6200','Milan'),
+(12, 'BPM SPA', 'S01', 'IT', 'Via Roma', '13','6200','Milan'); 
 
 -- Insert customer references
-INSERT INTO ref_customers (reference_id, customer_id, role, email, country, country_phone_code, phone_number) VALUES
-(101, 1, 'Purchasing Manager', 'pm@techretail.nl', 'Netherlands', 0031, 612345678),
-(102, 2, 'Head of Procurement', 'procurement@finbank.de', 'Germany', 0049, 172345678),
-(103, 3, 'Head of Procurement', 'proc@medtech.fr', 'France', 0033, 612222333),
-(104, 4, 'IT Manager', 'it@eduglobal.nl', 'Netherlands', 0031, 612333444),
-(105, 5, 'Logistics Lead', 'logi@logitrans.de', 'Germany', 0049, 172111222),
-(106, 6, 'Energy Buyer', 'buyer@energy.it', 'Italy', 0039, 331444555),
-(107, 7, 'Senior Consultant', 'contact@consultplus.es', 'Spain', 0034, 699555666),
-(108, 8, 'Network Manager', 'network@telecom.nl', 'Netherlands', 0031, 612777888),
-(109, 9, 'Retail Buyer', 'buyer@retailmax.pt', 'Portugal', 00351, 962333444),
-(110, 10, 'Risk Manager', 'risk@banksecure.be', 'Belgium', 0032, 477999111);
+INSERT INTO ref_customers (reference_id, customer_id, name, surname, role, email, country, country_phone_code, phone_number) VALUES
+(101, 1, 'Jan', 'Vermeer', 'Purchasing Manager', 'pm@techretail.nl', 'NL', 0031, 612345678),
+(102, 2, 'Anna', 'Schmidt', 'Head of Procurement', 'procurement@finbank.de', 'DE', 0049, 172345678),
+(103, 3, 'Claire', 'Dubois', 'Head of Procurement', 'proc@medtech.fr', 'FR', 0033, 612222333),
+(104, 4, 'Mark', 'Jansen', 'IT Manager', 'it@eduglobal.nl', 'NL', 0031, 612333444),
+(105, 5, 'Lisa', 'Müller', 'Logistics Lead', 'logi@logitrans.de', 'DE', 0049, 172111222),
+(106, 6, 'Marco', 'Rossi', 'Energy Buyer', 'buyer@energy.it', 'IT', 0039, 331444555),
+(107, 7, 'Carlos', 'García', 'Senior Consultant', 'contact@consultplus.es', 'ES', 0034, 699555666),
+(108, 8, 'Sophie', 'De Vries', 'Network Manager', 'network@telecom.nl', 'NL', 0031, 612777888),
+(109, 9, 'Pedro', 'Silva', 'Retail Buyer', 'buyer@retailmax.pt', 'PT', 00351, 962333444),
+(110, 10, 'Emma', 'Peeters', 'Risk Manager', 'risk@banksecure.be', 'BE', 0032, 477999111),
+(111, 4, 'Laura', 'Jansen', 'Purchasing Manager', 'pur@eduglobal.nl', 'NL', 0031, 612333555),
+(112, 7, 'Miguel', 'García', 'Purchasing Manager', 'pur@consultplus.es', 'ES', 0034, 699555777),
+(113, 8, 'Sanne', 'De Vries', 'Purchasing Manager', 'pur@telecom.nl', 'NL', 0031, 612777999),
+(114, 10, 'Tom', 'Peeters', 'Purchasing Manager', 'pur@banksecure.be', 'BE', 0032, 477999331),
+(115, 11, 'Luca', 'Bianchi', 'Purchasing Manager', 'purchasing@intesa.it', 'IT', 0039, 3495959),
+(116, 12, 'Giulia', 'Rossi', 'Purchasing Manager', 'purchasing@banksecure.it', 'IT', 0039, 3459873);
 
 -- Insert employees
-INSERT INTO employees (employee_id, branch_id, role, department, email, phone_number) VALUES
-(1, 1, 'Manager', 'Sales', 'sales_manager@hq.nl', 612000001),
-(2, 1, 'Salesman', 'Sales', 'rep1@hq.nl', 612000002),
-(3, 2, 'Salesman', 'Sales', 'rep2@berlin.de', 49170000003),
-(4, 3, 'Salesman', 'Sales', 'rep3@paris.fr', 3310000004),
-(5, 4, 'Manager', 'Management', 'manager@rome.it', 3906000005),
-(6, 5, 'Salesman', 'Sales', 'sales@madrid.es', 3469000006),
-(7, 6, 'HR', 'HR', 'hr@lisbon.pt', 3512100007),
-(8, 7, 'Salesman', 'Sales', 'rep@brussels.be', 3227000008),
-(9, 8, 'External', 'R&D', 'consultant@ny.us', 1212000009),
-(10, 9, 'Manager', 'Management', 'manager@shanghai.cn', 861380000010);
+INSERT INTO employees (employee_id, branch_id, name, surname, role, department, email, phone_number) VALUES
+(1, 1, 'Sophie', 'Vermeer', 'Manager', 'Sales', 'sophie.vermeer@hq.nl', 31612000001),
+(2, 1, 'Mark', 'Jansen', 'Salesman', 'Sales', 'mark.jansen@hq.nl', 31612000002),
+(3, 2, 'Anna', 'Schmidt', 'Salesman', 'Sales', 'anna.schmidt@berlin.de', 49170000003),
+(4, 3, 'Pierre', 'Dupont', 'Salesman', 'Sales', 'pierre.dupont@paris.fr', 33100000004),
+(5, 4, 'Giulia', 'Rossi', 'Manager', 'Management', 'giulia.rossi@rome.it', 39060000005),
+(6, 5, 'Carlos', 'Martinez', 'Salesman', 'Sales', 'carlos.martinez@madrid.es', 34690000006),
+(7, 6, 'Inês', 'Silva', 'HR', 'HR', 'ines.silva@lisbon.pt', 35121000007),
+(8, 7, 'Tom', 'Peeters', 'Salesman', 'Sales', 'tom.peeters@brussels.be', 32270000008),
+(9, 8, 'John', 'Smith', 'External', 'R&D', 'john.smith@ny.us', 12120000009),
+(10, 9, 'Li', 'Wei', 'Manager', 'Management', 'li.wei@shanghai.cn', 861380000010);
 
 -- Insert partners
-INSERT INTO partner (partner_id, company_name, country, products_and_services, contact_person, contact_email) VALUES
-(1, 'Nvidia Corp', 'US', 'gpu', 'Alice Johnson', 'alice@nvidia.com'),
-(2, 'Intel GmbH', 'Germany', 'cpu', 'Max Müller', 'max@intel.de'),
-(3, 'AMD Inc.', 'US', 'cpu', 'John Sbo', 'john@amd.com'),
-(4, 'ASML', 'Netherlands', 'semiconductors', 'Eva Jansen', 'eva@asml.nl'),
-(5, 'Samsung Electronics', 'China', 'memory', 'Li Wei', 'liwei@samsung.cn'),
-(6, 'TSMC', 'Taiwan', 'chips', 'Chen Lin', 'chen@tsmc.com'),
-(7, 'Cisco Systems', 'United States', 'networking', 'Michael Brown', 'michael@cisco.com'),
-(8, 'Seagate', 'United States', 'storage', 'Samantha Green', 'sam@seagate.com'),
-(9, 'Micron', 'United States', 'memory', 'Robert White', 'robert@micron.com'),
-(10, 'Lenovo', 'China', 'laptops', 'Zhang Li', 'zhang@lenovo.cn');
+INSERT INTO partner (partner_id, company_name, country, products_and_services, sector, contact_person, contact_email) VALUES
+(1, 'Nvidia Corp', 'US', 'gpu', 'S02', 'Alice Johnson', 'alice@nvidia.com'),
+(2, 'Intel GmbH', 'Germany', 'cpu', 'S02','Max Müller', 'max@intel.de'),
+(3, 'AMD Inc.', 'US', 'cpu', 'S02','John Sbo', 'john@amd.com'),
+(4, 'ASML', 'Netherlands', 'semiconductors', 'S02', 'Eva Jansen', 'eva@asml.nl'),
+(5, 'Samsung Electronics', 'China', 'memory', 'S02', 'Li Wei', 'liwei@samsung.cn'),
+(6, 'TSMC', 'Taiwan', 'chips', 'Chen Lin', 'S02','chen@tsmc.com'),
+(7, 'Cisco Systems', 'United States', 'networking', 'S02', 'Michael Brown', 'michael@cisco.com'),
+(8, 'Seagate', 'United States', 'storage', 'S02','Samantha Green', 'sam@seagate.com'),
+(9, 'Micron', 'United States', 'memory', 'S02','Robert White', 'robert@micron.com'),
+(10, 'Lenovo', 'China', 'laptops', 'S02','Zhang Li', 'zhang@lenovo.cn');
 
 -- Insert items
 INSERT INTO items (item_id, tech_name, partner_id, buy_price) VALUES
@@ -235,17 +249,20 @@ INSERT INTO items (item_id, tech_name, partner_id, buy_price) VALUES
 -- Insert bills
 INSERT INTO bill (bill_id, branch_id, customer_id, date, amount, payment_method, ref_employee_id, ref_cust_id) VALUES
 (1, 1, 1, '2025-09-01', 1250.00, 'IBAN', 2, 101),
-(2, 2, 2, '2025-09-05', 3000.00, 'Credit Card', 3, 102),
-(3, 3, 3, '2025-09-07', 600.00, 'Cash', 4, 103),
-(4, 4, 4, '2025-09-08', 1200.00, 'IBAN', 5, 104),
-(5, 5, 5, '2025-09-09', 2200.00, 'Credit Card', 6, 105),
-(6, 6, 6, '2025-09-10', 500.00, 'IBAN', 7, 106),
-(7, 7, 7, '2025-09-11', 1800.00, 'Cash', 8, 107),
-(8, 8, 8, '2025-09-12', 3500.00, 'IBAN', 9, 108),
-(9, 9, 9, '2025-09-13', 1500.00, 'Credit Card', 10, 109),
-(10, 10, 10, '2025-09-14', 4000.00, 'IBAN', 8, 110),
-(11, 1, 1, '2025-09-15', 2200.00, 'IBAN', 2, 101),
-(12, 2, 5, '2025-09-16', 800.00, 'Credit Card', 3, 105);
+(2, 2, 2, '2025-09-05', 3200.00, 'Credit Card', 3, 102),
+(3, 3, 3, '2025-09-07', 400.00, 'Cash', 4, 103),
+(4, 4, 4, '2025-09-08', 1500.00, 'IBAN', 5, 111),
+(5, 5, 5, '2025-09-09', 2500.00, 'Credit Card', 6, 105),
+(6, 6, 6, '2025-09-10', 1400.00, 'IBAN', 7, 106),
+(7, 7, 7, '2025-09-11', 130000.00, 'Cash', 8, 112),
+(8, 8, 8, '2025-09-12', 1750.00, 'IBAN', 9, 113),
+(9, 9, 9, '2025-09-13', 2100.00, 'Credit Card', 10, 109),
+(10, 10, 10, '2025-09-14', 5000.00, 'IBAN', 8, 114),
+(11, 1, 1, '2025-09-15', 6200.00, 'IBAN', 2, 101),
+(12, 2, 5, '2025-09-16', 8300.00, 'Credit Card', 3, 105),
+(13, 4, 12, '2025-09-17', 15000.00, 'IBAN', 2, 115),
+(14, 4, 13, '2025-09-18', 30002.6, 'IBAN', 2, 116);
+
 
 -- Insert bill items
 INSERT INTO bill_item (bill_id, item_id, quantity, price) VALUES
@@ -263,60 +280,44 @@ INSERT INTO bill_item (bill_id, item_id, quantity, price) VALUES
 (11, 8, 3, 600.00),   -- TSMC Chipset
 (11, 9, 2, 2200.00),  -- Cisco Router
 (12, 7, 10, 180.00),  -- Samsung DDR5
-(12, 10, 5, 1300.00); -- Lenovo ThinkPad
+(12, 10, 5, 1300.00), -- Lenovo ThinkPad
+(13, 10, 10, 1500.00),
+(14, 10, 20, 1500.13);
 
 -- Insert statuses
 INSERT INTO status (bill_id, update_date, status_items, status_payment, refund_request) VALUES
--- Bill 1 (agreement 2025-09-01)
 (1, '2025-09-01', 'Preparing', 'Pending', 0),
-(1, '2025-09-02', 'Shipped',   'Payed', 0),
-(1, '2025-09-04', 'Delivered', 'Payed', 0),
-
--- Bill 2 (agreement 2025-09-05)
+(1, '2025-09-02', 'Shipping',   'Paid', 0),
+(1, '2025-09-04', 'Delivered', 'Paid', 0),
 (2, '2025-09-05', 'Preparing', 'Pending', 0),
-(2, '2025-09-06', 'Shipped',   'Pending', 0),
-(2, '2025-09-08', 'Delivered', 'Payed', 0),
-
--- Bill 3 (agreement 2025-09-07)
+(2, '2025-09-06', 'Shipping',   'Pending', 0),
+(2, '2025-09-08', 'Delivered', 'Paid', 0),
 (3, '2025-09-07', 'Preparing', 'Pending', 0),
-(3, '2025-09-08', 'Shipped',   'Payed', 0),
-
--- Bill 4 (agreement 2025-09-08)
+(3, '2025-09-08', 'Shipping',   'Paid', 0),
 (4, '2025-09-08', 'Preparing', 'Pending', 0),
-(4, '2025-09-09', 'Shipped',   'Pending', 0),
-(4, '2025-09-11', 'Delivered', 'Payed', 0),
-
--- Bill 5 (agreement 2025-09-09)
+(4, '2025-09-09', 'Shipping',   'Pending', 0),
+(4, '2025-09-11', 'Delivered', 'Paid', 0),
 (5, '2025-09-09', 'Preparing', 'Pending', 0),
-(5, '2025-09-10', 'Shipped',   'Payed', 0),
-
--- Bill 6 (agreement 2025-09-10)
+(5, '2025-09-10', 'Shipping',   'Paid', 0),
 (6, '2025-09-10', 'Preparing', 'Pending', 0),
-(6, '2025-09-11', 'Shipped',   'Payed', 0),
-
--- Bill 7 (agreement 2025-09-11)
+(6, '2025-09-11', 'Shipping',   'Paid', 0),
 (7, '2025-09-11', 'Preparing', 'Pending', 0),
-(7, '2025-09-12', 'Shipped',   'Pending', 0),
-(7, '2025-09-13', 'Delivered', 'Payed', 0),
-
--- Bill 8 (agreement 2025-09-12)
+(7, '2025-09-12', 'Shipping',   'Pending', 0),
+(7, '2025-09-13', 'Delivered', 'Paid', 0),
 (8, '2025-09-12', 'Preparing', 'Pending', 0),
-(8, '2025-09-13', 'Shipped',   'Pending', 0),
-(8, '2025-09-15', 'Delivered', 'Payed', 0),
-
--- Bill 9 (agreement 2025-09-13)
+(8, '2025-09-13', 'Shipping',   'Pending', 0),
+(8, '2025-09-15', 'Delivered', 'Paid', 0),
 (9, '2025-09-13', 'Preparing', 'Pending', 0),
-(9, '2025-09-14', 'Shipped',   'Payed', 1),  -- Refund requested after delivery
-
--- Bill 10 (agreement 2025-09-14)
+(9, '2025-09-14', 'Shipping',   'Paid', 0),
+(9, '2025-09-15', 'Delivered', 'Paid', 1),
+(9, '2025-09-16', 'Returned',  'Refunded', 1),
 (10, '2025-09-14', 'Preparing', 'Pending', 0),
-(10, '2025-09-15', 'Shipped',   'Pending', 0),
-(10, '2025-09-16', 'Delivered', 'Payed', 0),
-
--- Bill 11 (agreement 2025-09-15)
+(10, '2025-09-15', 'Shipping',   'Pending', 0),
+(10, '2025-09-16', 'Delivered', 'Paid', 0),
 (11, '2025-09-15', 'Preparing', 'Pending', 0),
-(11, '2025-09-16', 'Shipped',   'Pending', 0),
-
--- Bill 12 (agreement 2025-09-16)
+(11, '2025-09-16', 'Shipping',   'Pending', 0),
 (12, '2025-09-16', 'Preparing', 'Pending', 0),
-(12, '2025-09-17', 'Shipped',   'Payed', 0);
+(12, '2025-09-17', 'Shipping',   'Failed', 0),
+(12, '2025-09-18', 'Delivered',  'Paid', 0),
+(13, '2025-09-18', 'Delivered', 'Paid', 0),
+(14, '2025-09-18', 'Delivered', 'Paid', 0);
