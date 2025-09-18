@@ -231,7 +231,7 @@ INSERT INTO employees (employee_id, branch_id, name, surname, role, department, 
 (10, 9, 'Li', 'Wei', 'Manager', 'Management', 'li.wei@shanghai.cn', 861380000010);
 
 -- Insert partners
-INSERT INTO partner (partner_id, company_name, country, products_and_services, sector, contact_person, contact_email) VALUES
+INSERT INTO partner (partner_id, company_name, country, products_and_services, sector_code, contact_person, contact_email) VALUES
 (1, 'Nvidia Corp', 'US', 'gpu', 'S02', 'Alice Johnson', 'alice@nvidia.com'),
 (2, 'Intel GmbH', 'Germany', 'cpu', 'S02','Max Müller', 'max@intel.de'),
 (3, 'AMD Inc.', 'US', 'cpu', 'S02','John Sbo', 'john@amd.com'),
