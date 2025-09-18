@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS partner;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS ref_customers;
+DROP TABLE IF EXISTS ref_employees;
 DROP TABLE IF EXISTS customer;
 DROP TABLE IF EXISTS branch;
 DROP TABLE IF EXISTS sector_tbl;
@@ -84,35 +85,44 @@ CREATE TABLE partner (
     company_name VARCHAR NOT NULL,
     country VARCHAR NOT NULL,
     products_and_services VARCHAR NOT NULL,
-    sector VARCHAR NOT NULL,
+    sector_code CHAR(3) NOT NULL,
     contact_person VARCHAR NOT NULL,
     contact_email VARCHAR NOT NULL,
     FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE
-    FOREIGN KEY(sector) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE
+    FOREIGN KEY(sector_code) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE
 );
 -- items we sell
 CREATE TABLE items (
     item_id INTEGER PRIMARY KEY, -- 001
     tech_name VARCHAR NOT NULL, -- Nvidia RTX 5060
-    partner_id VARCHAR NOT NULL,
+    partner_id INTEGER NOT NULL,
     buy_price FLOAT NOT NULL,
     FOREIGN KEY(partner_id) REFERENCES partner(partner_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 -- Items sold informations, info the status should be in another table e.g. status
 CREATE TABLE bill (
     bill_id INTEGER PRIMARY KEY,
-    branch_id INTEGER NOT NULL,
+    wh_branch_id INTEGER NOT NULL,
     customer_id INTEGER NOT NULL,
     date DATE NOT NULL,
     amount FLOAT NOT NULL,
     payment_method VARCHAR CHECK(payment_method IN ('Credit Card', 'IBAN', 'Cash')),
-    ref_employee_id INTEGER, -- Usually someone from sales
-    ref_cust_id INTEGER,
-    FOREIGN KEY(branch_id) REFERENCES branch(branch_id) ON UPDATE CASCADE,
-    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE,
+    FOREIGN KEY(wh_branch_id) REFERENCES branch(branch_id) ON UPDATE CASCADE,
+    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE
+);
+
+-- ref_employees: to track people who made the deal
+CREATE TABLE ref_employees (
+    bill_id INTEGER PRIMARY KEY,
+    ref_employee_id INTEGER NOT NULL, -- Usually someone from sales
+    ref_cust_id INTEGER DEFAULT NULL,
+    FOREIGN KEY(bill_id) REFERENCES bill(bill_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY(ref_employee_id) REFERENCES employees(employee_id) ON UPDATE CASCADE,
     FOREIGN KEY(ref_cust_id) REFERENCES ref_customers(reference_id) ON UPDATE CASCADE
 );
+
+
+
 -- Status of our invoices
 CREATE TABLE status (
     bill_id INTEGER,
@@ -247,21 +257,37 @@ INSERT INTO items (item_id, tech_name, partner_id, buy_price) VALUES
 (10, 'Lenovo ThinkPad X1', 10, 1200.00);
 
 -- Insert bills
-INSERT INTO bill (bill_id, branch_id, customer_id, date, amount, payment_method, ref_employee_id, ref_cust_id) VALUES
-(1, 1, 1, '2025-09-01', 1250.00, 'IBAN', 2, 101),
-(2, 2, 2, '2025-09-05', 3200.00, 'Credit Card', 3, 102),
-(3, 3, 3, '2025-09-07', 400.00, 'Cash', 4, 103),
-(4, 4, 4, '2025-09-08', 1500.00, 'IBAN', 5, 111),
-(5, 5, 5, '2025-09-09', 2500.00, 'Credit Card', 6, 105),
-(6, 6, 6, '2025-09-10', 1400.00, 'IBAN', 7, 106),
-(7, 7, 7, '2025-09-11', 130000.00, 'Cash', 8, 112),
-(8, 8, 8, '2025-09-12', 1750.00, 'IBAN', 9, 113),
-(9, 9, 9, '2025-09-13', 2100.00, 'Credit Card', 10, 109),
-(10, 10, 10, '2025-09-14', 5000.00, 'IBAN', 8, 114),
-(11, 1, 1, '2025-09-15', 6200.00, 'IBAN', 2, 101),
-(12, 2, 5, '2025-09-16', 8300.00, 'Credit Card', 3, 105),
-(13, 4, 12, '2025-09-17', 15000.00, 'IBAN', 2, 115),
-(14, 4, 13, '2025-09-18', 30002.6, 'IBAN', 2, 116);
+INSERT INTO bill (bill_id, wh_branch_id, customer_id, date, amount, payment_method) VALUES
+(1, 1, 1, '2025-09-01', 1250.00, 'IBAN' ),
+(2, 2, 2, '2025-09-05', 3200.00, 'Credit Card'),
+(3, 3, 3, '2025-09-07', 400.00, 'Cash'),
+(4, 4, 4, '2025-09-08', 1500.00, 'IBAN'),
+(5, 5, 5, '2025-09-09', 2500.00, 'Credit Card'),
+(6, 6, 6, '2025-09-10', 1400.00, 'IBAN'),
+(7, 7, 7, '2025-09-11', 130000.00, 'Cash'),
+(8, 8, 8, '2025-09-12', 1750.00, 'IBAN'),
+(9, 9, 9, '2025-09-13', 2100.00, 'Credit Card'),
+(10, 10, 10, '2025-09-14', 5000.00, 'IBAN'),
+(11, 1, 1, '2025-09-15', 6200.00, 'IBAN'),
+(12, 2, 5, '2025-09-16', 8300.00, 'Credit Card'),
+(13, 4, 12, '2025-09-17', 15000.00, 'IBAN'),
+(14, 4, 13, '2025-09-18', 30002.6, 'IBAN');
+
+INSERT INTO ref_employees (bill_id, ref_employee_id, ref_cust_id) VALUES
+(1, 2, 101),
+(2, 3, 102),
+(3, 4, 103),
+(4, 5, 111),
+(5, 6, 105),
+(6, 7, 106),
+(7, 8, 112),
+(8, 9, 113),
+(9, 10, 109),
+(10, 8, 114),
+(11, 2, 101),
+(12, 3, 105),
+(13, 2, 115),
+(14, 2, 116);
 
 
 -- Insert bill items
