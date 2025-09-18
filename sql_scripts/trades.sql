@@ -36,21 +36,21 @@ CREATE TABLE branch (
     branch_id INTEGER PRIMARY KEY,
     name VARCHAR NOT NULL,
     city VARCHAR NOT NULL,
-    country VARCHAR NOT NULL,
-    FOREIGN KEY(country) REFERENCES country_tbl(country)
+    country CHAR(2) NOT NULL,
+    FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE ON DELETE NO ACTION
 );
 -- customers main features (og table)
 CREATE TABLE customer (
     customer_id INTEGER PRIMARY KEY,
     company_name VARCHAR NOT NULL,
     sector_code CHAR(3),
-    country VARCHAR NOT NULL,
+    country CHAR(2) NOT NULL,
     street VARCHAR NOT NULL,
     house_number VARCHAR NOT NULL,
     zip_code VARCHAR NOT NULL, 
     city VARCHAR NOT NULL,
-    FOREIGN KEY(sector_code) REFERENCES sector_tbl(sector_code),
-    FOREIGN KEY(country) REFERENCES country_tbl(country)
+    FOREIGN KEY(sector_code) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE ON DELETE NO ACTION,
+    FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE ON DELETE NO ACTION
 );
 -- refence contact of our customers
 CREATE TABLE ref_customers (
@@ -60,11 +60,10 @@ CREATE TABLE ref_customers (
     surname VARCHAR NOT NULL,
     role VARCHAR NOT NULL, -- sales
     email VARCHAR UNIQUE NOT NULL,
-    country VARCHAR NOT NULL,
     country_phone_code INTEGER,
     phone_number INTEGER,
-    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY(country,country_phone_code) REFERENCES country_tbl(country,country_phone_code) ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(country_phone_code) REFERENCES country_tbl(country_phone_code) ON UPDATE CASCADE ON DELETE NO ACTION
 );
 -- company emplyees
 CREATE TABLE employees (
@@ -83,20 +82,20 @@ CREATE TABLE employees (
 CREATE TABLE partner (
     partner_id INTEGER PRIMARY KEY,
     company_name VARCHAR NOT NULL,
-    country VARCHAR NOT NULL,
+    country CHAR(2) NOT NULL,
     products_and_services VARCHAR NOT NULL,
     sector_code CHAR(3) NOT NULL,
     contact_person VARCHAR NOT NULL,
     contact_email VARCHAR NOT NULL,
-    FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE
-    FOREIGN KEY(sector_code) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE
+    FOREIGN KEY(country) REFERENCES country_tbl(country) ON UPDATE CASCADE ON DELETE NO ACTION,
+    FOREIGN KEY(sector_code) REFERENCES sector_tbl(sector_code) ON UPDATE CASCADE ON DELETE NO ACTION
 );
 -- items we sell
 CREATE TABLE items (
     item_id INTEGER PRIMARY KEY, -- 001
     tech_name VARCHAR NOT NULL, -- Nvidia RTX 5060
-    partner_id INTEGER NOT NULL,
-    buy_price FLOAT NOT NULL,
+    partner_id INTEGER DEFAULT NULL,
+    buy_price NUMERIC(12,2) NOT NULL,
     FOREIGN KEY(partner_id) REFERENCES partner(partner_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 -- Items sold informations, info the status should be in another table e.g. status
@@ -107,8 +106,8 @@ CREATE TABLE bill (
     date DATE NOT NULL,
     amount FLOAT NOT NULL,
     payment_method VARCHAR CHECK(payment_method IN ('Credit Card', 'IBAN', 'Cash')),
-    FOREIGN KEY(wh_branch_id) REFERENCES branch(branch_id) ON UPDATE CASCADE,
-    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE
+    FOREIGN KEY(wh_branch_id) REFERENCES branch(branch_id) ON UPDATE CASCADE ON DELETE NO ACTION,
+    FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE NO ACTION 
 );
 
 -- ref_employees: to track people who made the deal
@@ -117,8 +116,8 @@ CREATE TABLE ref_employees (
     ref_employee_id INTEGER NOT NULL, -- Usually someone from sales
     ref_cust_id INTEGER DEFAULT NULL,
     FOREIGN KEY(bill_id) REFERENCES bill(bill_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY(ref_employee_id) REFERENCES employees(employee_id) ON UPDATE CASCADE,
-    FOREIGN KEY(ref_cust_id) REFERENCES ref_customers(reference_id) ON UPDATE CASCADE
+    FOREIGN KEY(ref_employee_id) REFERENCES employees(employee_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(ref_cust_id) REFERENCES ref_customers(reference_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 
@@ -138,25 +137,25 @@ CREATE TABLE bill_item (
     bill_id INTEGER,
     item_id INTEGER,
     quantity INTEGER NOT NULL,
-    price FLOAT NOT NULL,
+    price NUMERIC(12,2) NOT NULL,
     PRIMARY KEY (bill_id, item_id),
     FOREIGN KEY(bill_id) REFERENCES bill(bill_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY(item_id) REFERENCES items(item_id) ON UPDATE CASCADE
+    FOREIGN KEY(item_id) REFERENCES items(item_id) ON UPDATE CASCADE ON DELETE NO ACTION
 );
 
 
--- Insert countries
+-- Insert countries: 00 in front of numbers are deleted in sqlite
 INSERT INTO country_tbl (country, country_name, country_phone_code) VALUES
-('NL', 'Netherlands', 0031),
-('DE', 'Germany', 0049),
-('FR', 'France', 0033),
-('IT', 'Italy', 0039),
-('GR', 'Greece', 0030),
-('ES', 'Spain', 0034),
-('PT', 'Portugal', 00351),
-('BE', 'Belgium', 0032),
-('US', 'United States', 001),
-('CN', 'China', 0086);
+('NL', 'Netherlands', 31),
+('DE', 'Germany', 49),
+('FR', 'France', 33),
+('IT', 'Italy', 39),
+('GR', 'Greece', 30),
+('ES', 'Spain', 34),
+('PT', 'Portugal', 351),
+('BE', 'Belgium', 32),
+('US', 'United States', 1),
+('CN', 'China', 86);
 
 -- Insert sectors
 INSERT INTO sector_tbl (sector_code, sector, sector_desc) VALUES
@@ -199,23 +198,23 @@ INSERT INTO customer (customer_id, company_name, sector_code, country, street, h
 (12, 'BPM SPA', 'S01', 'IT', 'Via Roma', '13','6200','Milan'); 
 
 -- Insert customer references
-INSERT INTO ref_customers (reference_id, customer_id, name, surname, role, email, country, country_phone_code, phone_number) VALUES
-(101, 1, 'Jan', 'Vermeer', 'Purchasing Manager', 'pm@techretail.nl', 'NL', 0031, 612345678),
-(102, 2, 'Anna', 'Schmidt', 'Head of Procurement', 'procurement@finbank.de', 'DE', 0049, 172345678),
-(103, 3, 'Claire', 'Dubois', 'Head of Procurement', 'proc@medtech.fr', 'FR', 0033, 612222333),
-(104, 4, 'Mark', 'Jansen', 'IT Manager', 'it@eduglobal.nl', 'NL', 0031, 612333444),
-(105, 5, 'Lisa', 'Müller', 'Logistics Lead', 'logi@logitrans.de', 'DE', 0049, 172111222),
-(106, 6, 'Marco', 'Rossi', 'Energy Buyer', 'buyer@energy.it', 'IT', 0039, 331444555),
-(107, 7, 'Carlos', 'García', 'Senior Consultant', 'contact@consultplus.es', 'ES', 0034, 699555666),
-(108, 8, 'Sophie', 'De Vries', 'Network Manager', 'network@telecom.nl', 'NL', 0031, 612777888),
-(109, 9, 'Pedro', 'Silva', 'Retail Buyer', 'buyer@retailmax.pt', 'PT', 00351, 962333444),
-(110, 10, 'Emma', 'Peeters', 'Risk Manager', 'risk@banksecure.be', 'BE', 0032, 477999111),
-(111, 4, 'Laura', 'Jansen', 'Purchasing Manager', 'pur@eduglobal.nl', 'NL', 0031, 612333555),
-(112, 7, 'Miguel', 'García', 'Purchasing Manager', 'pur@consultplus.es', 'ES', 0034, 699555777),
-(113, 8, 'Sanne', 'De Vries', 'Purchasing Manager', 'pur@telecom.nl', 'NL', 0031, 612777999),
-(114, 10, 'Tom', 'Peeters', 'Purchasing Manager', 'pur@banksecure.be', 'BE', 0032, 477999331),
-(115, 11, 'Luca', 'Bianchi', 'Purchasing Manager', 'purchasing@intesa.it', 'IT', 0039, 3495959),
-(116, 12, 'Giulia', 'Rossi', 'Purchasing Manager', 'purchasing@banksecure.it', 'IT', 0039, 3459873);
+INSERT INTO ref_customers (reference_id, customer_id, name, surname, role, email, country_phone_code, phone_number) VALUES
+(101, 1, 'Jan', 'Vermeer', 'Purchasing Manager', 'pm@techretail.nl', 31, 612345678),
+(102, 2, 'Anna', 'Schmidt', 'Head of Procurement', 'procurement@finbank.de', 49, 172345678),
+(103, 3, 'Claire', 'Dubois', 'Head of Procurement', 'proc@medtech.fr',  33, 612222333),
+(104, 4, 'Mark', 'Jansen', 'IT Manager', 'it@eduglobal.nl',  31, 612333444),
+(105, 5, 'Lisa', 'Müller', 'Logistics Lead', 'logi@logitrans.de',  49, 172111222),
+(106, 6, 'Marco', 'Rossi', 'Energy Buyer', 'buyer@energy.it',  39, 331444555),
+(107, 7, 'Carlos', 'García', 'Senior Consultant', 'contact@consultplus.es',  34, 699555666),
+(108, 8, 'Sophie', 'De Vries', 'Network Manager', 'network@telecom.nl', 31, 612777888),
+(109, 9, 'Pedro', 'Silva', 'Retail Buyer', 'buyer@retailmax.pt', 351, 962333444),
+(110, 10, 'Emma', 'Peeters', 'Risk Manager', 'risk@banksecure.be',  32, 477999111),
+(111, 4, 'Laura', 'Jansen', 'Purchasing Manager', 'pur@eduglobal.nl', 31, 612333555),
+(112, 7, 'Miguel', 'García', 'Purchasing Manager', 'pur@consultplus.es', 34, 699555777),
+(113, 8, 'Sanne', 'De Vries', 'Purchasing Manager', 'pur@telecom.nl',  31, 612777999),
+(114, 10, 'Tom', 'Peeters', 'Purchasing Manager', 'pur@banksecure.be',  32, 477999331),
+(115, 11, 'Luca', 'Bianchi', 'Purchasing Manager', 'purchasing@intesa.it', 39, 3495959),
+(116, 12, 'Giulia', 'Rossi', 'Purchasing Manager', 'purchasing@banksecure.it',  39, 3459873);
 
 -- Insert employees
 INSERT INTO employees (employee_id, branch_id, name, surname, role, department, email, phone_number) VALUES
