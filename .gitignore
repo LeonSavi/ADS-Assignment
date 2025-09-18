@@ -8,6 +8,7 @@ wheels/
 .ipynb_checkpoints/
 trades_db.png
 #*.db
+*.tex
 
 # Virtual environments
 .venv
