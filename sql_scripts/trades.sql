@@ -104,7 +104,7 @@ CREATE TABLE bill (
     wh_branch_id INTEGER NOT NULL,
     customer_id INTEGER NOT NULL,
     date DATE NOT NULL,
-    amount FLOAT NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
     payment_method VARCHAR CHECK(payment_method IN ('Credit Card', 'IBAN', 'Cash')),
     FOREIGN KEY(wh_branch_id) REFERENCES branch(branch_id) ON UPDATE CASCADE ON DELETE NO ACTION,
     FOREIGN KEY(customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE NO ACTION 
@@ -269,8 +269,8 @@ INSERT INTO bill (bill_id, wh_branch_id, customer_id, date, amount, payment_meth
 (10, 10, 10, '2025-09-14', 5000.00, 'IBAN'),
 (11, 1, 1, '2025-09-15', 6200.00, 'IBAN'),
 (12, 2, 5, '2025-09-16', 8300.00, 'Credit Card'),
-(13, 4, 12, '2025-09-17', 15000.00, 'IBAN'),
-(14, 4, 13, '2025-09-18', 30002.6, 'IBAN');
+(13, 4, 11, '2025-09-17', 15000.00, 'IBAN'),
+(14, 4, 12, '2025-09-18', 300002.6, 'IBAN');
 
 INSERT INTO ref_employees (bill_id, ref_employee_id, ref_cust_id) VALUES
 (1, 2, 101),
