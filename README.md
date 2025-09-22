@@ -1,5 +1,6 @@
 # Assignment 1  
 **Deadline:** 23.09.2025 at 9:00 AM
+**Public:** The repository is public for grading purposes and will be made private afterwards.
 
 ## 1. Environment Setup
 
@@ -16,7 +17,7 @@ sudo apt install sqlite3 -y
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-sqlite3 database/trades_db.db < sql_scripts/trades.sql #creates the database
+sqlite3 database/trades.db < sql_scripts/trades.sql #creates the database
 
 sudo apt install graphviz libgraphviz-dev -y # some dependencies for the library to drow the ER diagram
 
@@ -28,13 +29,10 @@ uv run py_scripts/sql_draw.py
 ```
 
 ## 3. TASK 1
-- To check sql scripts and to improve the checks and foreign keys, maybe streamline something ---> seeking inputs and suggestions
-- to answer questions
-
+- All done
 
 ## 4. TASK 2
-- To write in the word file, can be already done if we do not change much the db
-
+- SQL codes in the folder sql_scripts/task_2.sql.
 
 ## 5. TASK 3
 - Navigate to the py_scripts folder to find all Python scripts for Task 3.
