@@ -29,7 +29,7 @@ uv run py_scripts/sql_draw.py
 ```
 
 ## 3. TASK 1
-- All done
+- SQL scripts in sql_scripts/trades.sql
 
 ## 4. TASK 2
 - SQL codes in the folder sql_scripts/task_2.sql.
